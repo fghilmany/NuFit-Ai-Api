@@ -1,0 +1,13 @@
+# Supabase CLI project config -- ADR-008 (AI backend for AI Custom Plan, Chat, Meal Plan).
+# Dev must run `supabase link --project-ref <ref>` once against the real project before deploying
+# (SUPABASE_URL in the KMP client -- shared/.../data/auth/datasource/AuthRemoteDataSource.kt).
+project_id = "nufit-ai"
+
+[functions.ai-custom-plan-generate]
+verify_jwt = false # this function verifies the bearer token itself (auth.ts) to return a typed 401, not a framework-level reject
+
+[functions.chat-send]
+verify_jwt = false
+
+[functions.meal-plan-generate]
+verify_jwt = false
