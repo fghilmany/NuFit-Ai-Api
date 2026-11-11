@@ -59,8 +59,17 @@ export async function getQuotaStatus(userId: string, capability: Capability) {
 }
 
 /** Call BEFORE the LLM request. Throws QuotaExceededError -> caller maps to
- * `403 {"reason":"quota_exceeded"}` (matches ChatRemoteDataSource's existing handling). */
+ * `403 {"reason":"quota_exceeded"}` (matches ChatRemoteDataSource's existing handling).
+ * `user_entitlement.unlimited_quota` (manual flag, toggled by hand like ai_access_blocked)
+ * skips the check entirely -- tier gating in requireAiAccess still applies. */
 export async function assertQuotaAvailable(userId: string, capability: Capability) {
+  const { data: entitlement } = await serviceClient()
+    .from("user_entitlement")
+    .select("unlimited_quota")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (entitlement?.unlimited_quota) return;
+
   const status = await getQuotaStatus(userId, capability);
   if (status.used >= status.max) {
     throw new QuotaExceededError(status.used, status.max, status.resetsAt);
