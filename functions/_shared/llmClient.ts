@@ -1,20 +1,29 @@
-// OpenRouter wrapper (OpenAI-compatible chat completions API) -- matches pricing.md §7's
-// production recommendation (route dev through OpenRouter too, same provider as prod). Kept
-// behind this single small interface (generateStructured/generateWithTools) so swapping the exact
-// model later is a one-file, one-constant change. See ADR-008.
+// Surplus Intelligence wrapper (OpenAI-compatible chat completions API). Kept behind this single
+// small interface (generateStructured/generateWithTools) so swapping the exact model/provider
+// later is a one-file, one-constant change. See ADR-008 (provider history predates the Surplus
+// Intelligence switch -- not documented there; this file is the source of truth for "what's live
+// today").
 //
-// TODO(dev): "inclusionai/ling-3.0-flash:free" is a free OpenRouter model -- confirm it's still
-// available/has quota before relying on it; free models on OpenRouter can be rate-limited or
-// deprecated without much notice, same as Gemini's 2.0 generation was.
-// Switched from "nvidia/nemotron-3-ultra-550b-a55b:free" (550B params) -- too slow/heavy, caused
-// Edge Function invocations to hit Supabase's WORKER_RESOURCE_LIMIT before the model finished
-// responding. Ling-3.0-flash is a 124B MoE model with only ~5.1B active params/token (much
-// faster), which fits the Edge Function's compute budget.
-const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY")!;
-const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions";
-export const DEFAULT_MODEL = "inclusionai/ling-3.0-flash:free";
+// DEFAULT_MODEL picked 2026-11-09 after a live A/B test against real chat-send/meal-plan-generate
+// calls: glm-5.2 caused WORKER_RESOURCE_LIMIT (hit Supabase's ~150s Edge Function wall-clock cap
+// generating the 7-day/21-meal Meal Plan JSON -- too slow/heavy for this workload). deepseek-v4.1-flash
+// was dropped: its "Trusted"-seller discount was too unreliable in practice (repeatedly failed
+// `minimum_discount_not_met` even after lowering the account's discount-threshold setting) --
+// landing it would've meant random production failures. glm-4.7-flash was dropped without testing
+// -- absent from the trust=trusted&caps=tools&sellers=5 filtered marketplace view, so it fails at
+// least one of those three requirements (most likely: no tool-calling support, which chat-send
+// needs). glm-5.3-flash passed chat-send's tests cleanly (B.Indo tone, TDEE math accuracy,
+// tool-calling). meal-plan-generate is NOT clean -- inconsistent queueing latency on this
+// marketplace means its sequential multi-batch calls sometimes finish fine, sometimes hit
+// Supabase's ~150s cap. Shipped anyway as an accepted risk (dev decision, 2026-11-09) rather than
+// blocking on a real fix -- see docs/tech-debt-88-pricing-sync.md's 2026-11-09 addendum for the
+// evidence and the options that were NOT taken (raise the Edge Function timeout, make Meal Plan
+// generation async, or use a non-marketplace provider for just that endpoint).
+const LLM_API_KEY = Deno.env.get("LLM_API_KEY")!;
+const LLM_BASE_URL = "https://api.surplusintelligence.ai/v1/chat/completions";
+export const DEFAULT_MODEL = "glm-5.3-flash";
 
-interface OpenRouterUsage {
+interface LlmUsage {
   prompt_tokens?: number;
   completion_tokens?: number;
 }
@@ -30,24 +39,30 @@ export interface LlmResult<T> {
  * after we've forced a tools-free final round-trip (should be rare after that fix). */
 const FALLBACK_REPLY = "Maaf, aku belum bisa jawab itu sekarang. Coba tanya lagi dengan kata lain ya.";
 
-async function callOpenRouter(body: Record<string, unknown>): Promise<{ json: Record<string, unknown>; usage: OpenRouterUsage }> {
-  const res = await fetch(OPENROUTER_BASE_URL, {
+async function callLlm(body: Record<string, unknown>): Promise<{ json: Record<string, unknown>; usage: LlmUsage }> {
+  const startedAt = performance.now();
+  const res = await fetch(LLM_BASE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-      // OpenRouter asks for these on free-tier requests (used for their public leaderboard, not required but recommended).
-      "HTTP-Referer": "https://nufit.ai",
-      "X-Title": "NuFit AI",
+      "Authorization": `Bearer ${LLM_API_KEY}`,
     },
     body: JSON.stringify(body),
   });
+  const durationMs = Math.round(performance.now() - startedAt);
 
   if (!res.ok) {
-    throw new Error(`OpenRouter request failed: ${res.status} ${await res.text()}`);
+    console.log(`[llmClient] model=${body.model} FAILED status=${res.status} duration_ms=${durationMs}`);
+    throw new Error(`LLM request failed: ${res.status} ${await res.text()}`);
   }
   const json = await res.json();
-  return { json, usage: (json.usage as OpenRouterUsage) ?? {} };
+  const usage = (json.usage as LlmUsage) ?? {};
+  // TEMP (model A/B test, see dev request): one line per call for quick comparison across
+  // candidates -- remove once deepseek-v4.1-flash / glm-5.3-flash / gemini-3.8-flash are compared.
+  console.log(
+    `[llmClient] model=${body.model} duration_ms=${durationMs} tokenIn=${usage.prompt_tokens ?? 0} tokenOut=${usage.completion_tokens ?? 0}`,
+  );
+  return { json, usage };
 }
 
 /** For AI Custom Plan + Meal Plan generation: asks for JSON-only output matching `schema`, via
@@ -60,9 +75,10 @@ export async function generateStructured<T>(params: {
   userPrompt: string;
   schema: unknown;
   model?: string;
+  maxTokens?: number;
 }): Promise<LlmResult<T>> {
   const model = params.model ?? DEFAULT_MODEL;
-  const { json, usage } = await callOpenRouter({
+  const { json, usage } = await callLlm({
     model,
     messages: [
       {
@@ -71,12 +87,22 @@ export async function generateStructured<T>(params: {
       },
       { role: "user", content: params.userPrompt },
     ],
-    max_tokens: 8000, // pricing.md §2 output ceiling
+    // 16000 default (raised from pricing.md §2's original 8000, 2026-11-09): glm-5.3-flash hit the
+    // 8000 cap generating the full 7-day/21-meal JSON with content still empty -- likely spending
+    // part of the budget on internal reasoning before the final answer. Callers doing smaller,
+    // batched requests (meal-plan-generate's per-day-range batches) pass a smaller `maxTokens`.
+    max_tokens: params.maxTokens ?? 16000,
   });
 
   const choices = json.choices as Array<{ message?: { content?: string } } > | undefined;
   const content = choices?.[0]?.message?.content;
-  if (!content) throw new Error("OpenRouter returned no content");
+  if (!content) {
+    // TEMP (debugging empty-content-at-max_tokens): dump the raw message object so we can see
+    // whether the output landed in a differently-named field (e.g. reasoning_content).
+    console.log(`[llmClient] EMPTY CONTENT raw message: ${JSON.stringify(choices?.[0]?.message)}`);
+    console.log(`[llmClient] EMPTY CONTENT finish_reason: ${(choices?.[0] as Record<string, unknown>)?.finish_reason}`);
+    throw new Error("LLM returned no content");
+  }
 
   return {
     data: JSON.parse(stripCodeFence(content)) as T,
@@ -104,7 +130,7 @@ export interface ChatTurn {
   text: string;
 }
 
-interface OpenRouterToolCall {
+interface LlmToolCall {
   id: string;
   type: "function";
   function: { name: string; arguments: string };
@@ -145,7 +171,7 @@ export async function generateWithTools(params: {
   // to execute it (tracked as the root cause of the empty `reply.text` bug, fixed here).
   for (let attempt = 0; attempt < 2; attempt++) {
     const isFinalAttempt = toolCallsUsed > 0;
-    const { json, usage } = await callOpenRouter({
+    const { json, usage } = await callLlm({
       model,
       messages,
       ...(isFinalAttempt ? {} : { tools }),
@@ -155,7 +181,7 @@ export async function generateWithTools(params: {
     tokenIn += usage.prompt_tokens ?? 0;
     tokenOut += usage.completion_tokens ?? 0;
 
-    const choices = json.choices as Array<{ message?: { content?: string | null; tool_calls?: OpenRouterToolCall[] } }> | undefined;
+    const choices = json.choices as Array<{ message?: { content?: string | null; tool_calls?: LlmToolCall[] } }> | undefined;
     const message = choices?.[0]?.message;
     const toolCalls = message?.tool_calls ?? [];
 

@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     // otomatis" -- this pass drops invalid ids and reports via `conflicts[]` (client already
     // renders this field) rather than inventing a substitute, since a safe substitute requires
     // matching movement pattern/equipment, which is a bigger follow-up than "functional first".
-    // OpenRouter's `json_object` mode (unlike Gemini's strict `responseSchema`) doesn't guarantee
+    // The LLM provider's `json_object` mode (unlike Gemini's strict `responseSchema`) doesn't guarantee
     // every schema field is present -- the model may omit an empty/optional array entirely
     // instead of returning `[]`. Default defensively rather than assuming shape.
     const days = Array.isArray(result.data.days) ? result.data.days : [];
