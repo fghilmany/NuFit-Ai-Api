@@ -122,6 +122,10 @@ export interface MealPlanRequestDto {
   target: MacroTargetDto;
   goal: string;
   preference: MealPreferenceDto;
+  // Client orchestrates 7 sequential per-day calls (1 LLM call each, ~20s) instead of one big
+  // 7-day request -- each invocation needs far less of Supabase Edge Functions' ~150s wall-clock
+  // cap. See docs/tech-debt-88-pricing-sync.md's 2026-11-09 addendum for why.
+  dayNumber: number;
 }
 
 export interface PlannedMealDto {

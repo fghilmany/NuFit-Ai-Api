@@ -58,31 +58,38 @@ Deno.serve(async (req) => {
   try {
     const userId = await requireUserId(req);
     await requireAiAccess(userId, "LOGGED_IN");
-    await assertQuotaAvailable(userId, "MEAL_PLAN");
 
     const request = (await req.json()) as MealPlanRequestDto;
 
+    // Per-day generate (2026-11-10): each call is its own distinct "generate this day" product
+    // action, so each one is its own quota unit again -- no more week-level special-casing.
+    await assertQuotaAvailable(userId, "MEAL_PLAN");
+
     const systemInstruction =
-      "Kamu adalah ahli gizi yang membuat rencana makan 7 hari dalam Bahasa Indonesia, sesuai " +
-      "target makro dan preferensi user. Balas HANYA dengan JSON sesuai schema. Setiap hari punya " +
-      "tepat 3 meals: BREAKFAST, LUNCH, DINNER. Total kalori tiap hari harus mendekati target.";
+      "Kamu adalah ahli gizi yang membuat rencana makan dalam Bahasa Indonesia, sesuai target " +
+      "makro dan preferensi user. Ini salah satu hari dari rencana makan 7 hari penuh -- generate " +
+      "HANYA untuk hari yang diminta. Balas HANYA dengan JSON sesuai schema, array `days` berisi " +
+      "tepat 1 elemen untuk hari tersebut. Hari itu punya tepat 3 meals: BREAKFAST, LUNCH, DINNER. " +
+      "Total kalori hari itu harus mendekati target.";
 
     const userPrompt = JSON.stringify({
       target: request.target,
       goal: request.goal,
       preference: request.preference,
+      dayNumber: request.dayNumber,
     });
 
     const result = await generateStructured<MealPlanResponseDto>({
       systemInstruction,
       userPrompt,
       schema: RESPONSE_SCHEMA,
+      maxTokens: 8000, // flat budget for 1 day / 3 meals -- GLM reasoning_content alone can burn 3000+ before the JSON starts
     });
 
     // Light sanity checks only (techspec: no exerciseId-style validation needed for meals) --
     // drop days that come back with zero meals or a meal with no ingredients rather than
-    // rendering something broken. OpenRouter's `json_object` mode doesn't guarantee every array
-    // field is present (may omit instead of returning `[]`) -- default defensively.
+    // rendering something broken. The LLM provider's `json_object` mode doesn't guarantee every
+    // array field is present (may omit instead of returning `[]`) -- default defensively.
     const rawDays = Array.isArray(result.data.days) ? result.data.days : [];
     const cleanedDays = rawDays
       .map((day) => ({ ...day, meals: (Array.isArray(day.meals) ? day.meals : []).filter((m) => Array.isArray(m.ingredients) && m.ingredients.length > 0) }))

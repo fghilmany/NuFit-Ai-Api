@@ -15,12 +15,17 @@ type Period = "day" | "month";
  * recommendation (a different, still-deferred number for the eventual paid phase, tracked in
  * issue #88) -- don't conflate the two. CHAT_AI_PRO and AI_CUSTOM_PLAN are untouched safety
  * ceilings only (no client UI reflects them yet), sized from pricing.md §2 as a reasonable cost
- * guard, not a designed/communicated limit. */
+ * guard, not a designed/communicated limit.
+ *
+ * MEAL_PLAN changed from 5/month to 1/day (2026-11-10): generation moved from "1 call = 1 week"
+ * to "1 call = 1 day" (docs/techspec/meal-plan.md §3) -- 5/month would exhaust itself filling
+ * less than one week. 1/day matches the new per-day unit of work directly: at most one
+ * generate-or-regenerate tap per calendar day, across however many day-slots the user picks. */
 const QUOTA_CONFIG: Record<Capability, { max: number; period: Period }> = {
   CHAT_AI_BASIC: { max: 20, period: "day" },
   CHAT_AI_PRO: { max: 100, period: "day" }, // safety ceiling only; client never shows this as exhausted (chat-ai.md AC-3)
   AI_CUSTOM_PLAN: { max: 6, period: "month" },
-  MEAL_PLAN: { max: 8, period: "month" },
+  MEAL_PLAN: { max: 1, period: "day" },
 };
 
 function periodStart(period: Period): Date {
@@ -47,6 +52,7 @@ export async function getQuotaStatus(userId: string, capability: Capability) {
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("capability", capability)
+    .eq("is_quota_unit", true)
     .gte("created_at", start.toISOString());
 
   return { used: count ?? 0, max, resetsAt };
@@ -61,13 +67,16 @@ export async function assertQuotaAvailable(userId: string, capability: Capabilit
   }
 }
 
-/** Call AFTER a successful LLM response, with real token counts. */
+/** Call AFTER a successful LLM response, with real token counts. [isQuotaUnit] defaults true --
+ * one row = one quota unit, true for every capability including meal-plan-generate's per-day
+ * calls (each day-tap is its own unit, 2026-11-10). */
 export async function recordUsage(
   userId: string,
   capability: Capability,
   model: string,
   tokenIn: number,
   tokenOut: number,
+  isQuotaUnit: boolean = true,
 ) {
   await serviceClient().from("ai_usage").insert({
     user_id: userId,
@@ -75,5 +84,6 @@ export async function recordUsage(
     model,
     token_in: tokenIn,
     token_out: tokenOut,
+    is_quota_unit: isQuotaUnit,
   });
 }
