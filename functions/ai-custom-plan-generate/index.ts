@@ -1,8 +1,8 @@
 // techspec ai-custom-plan.md -- POST /v1/ai-custom-plan/generate
-// Mirrors AiCustomPlanRemoteDataSource.kt's contract exactly. SUBSCRIBED-only capability.
+// Mirrors AiCustomPlanRemoteDataSource.kt's contract exactly. LOGGED_IN minimum (ADR-009, free showcase).
 import { corsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
 import { requireUserId, UnauthorizedError } from "../_shared/auth.ts";
-import { requireTier, ForbiddenError } from "../_shared/entitlement.ts";
+import { requireAiAccess, ForbiddenError, AiAccessBlockedError } from "../_shared/entitlement.ts";
 import { assertQuotaAvailable, recordUsage, QuotaExceededError } from "../_shared/quota.ts";
 import { generateStructured } from "../_shared/llmClient.ts";
 import { validateExerciseIds } from "../_shared/exerciseCatalog.ts";
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
   try {
     const userId = await requireUserId(req);
-    await requireTier(userId, "SUBSCRIBED");
+    await requireAiAccess(userId, "LOGGED_IN");
     await assertQuotaAvailable(userId, "AI_CUSTOM_PLAN");
 
     const request = (await req.json()) as AiPlanRequestDto;
@@ -105,7 +105,11 @@ Deno.serve(async (req) => {
       return new Response(null, { status: 401, headers: corsHeaders });
     }
     if (e instanceof ForbiddenError) {
+      // ADR-009: unreachable while min tier is LOGGED_IN -- kept for when the paywall returns.
       return new Response(JSON.stringify({ reason: "requires_subscription" }), { status: 403, headers: corsHeaders });
+    }
+    if (e instanceof AiAccessBlockedError) {
+      return new Response(JSON.stringify({ reason: "ai_access_blocked", message: e.reason }), { status: 403, headers: corsHeaders });
     }
     if (e instanceof QuotaExceededError) {
       return new Response(

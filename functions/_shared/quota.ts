@@ -9,13 +9,15 @@ export class QuotaExceededError extends Error {
 
 type Period = "day" | "month";
 
-/** CHAT_AI_BASIC's 5/day is the one number the client actually surfaces today ("X/5 chat hari
- * ini", ChatQuota UI) -- keep it exact per the dev's "functional first" instruction (pricing.md's
- * 20/month recommendation is deferred, tracked in issue #88). The other three are safety
- * ceilings only (no client UI reflects them yet), sized from pricing.md §2 as a reasonable
- * cost guard, not a designed/communicated limit. */
+/** ADR-009 (2026-11-09, free MVP showcase phase): CHAT_AI_BASIC 20/day is the number the dev set
+ * for this phase -- the client's "X/{max} chat hari ini" quota label is driven by this `max`
+ * value, not hardcoded, so bumping it here is all the client needs. NOT `pricing.md`'s 20/month
+ * recommendation (a different, still-deferred number for the eventual paid phase, tracked in
+ * issue #88) -- don't conflate the two. CHAT_AI_PRO and AI_CUSTOM_PLAN are untouched safety
+ * ceilings only (no client UI reflects them yet), sized from pricing.md §2 as a reasonable cost
+ * guard, not a designed/communicated limit. */
 const QUOTA_CONFIG: Record<Capability, { max: number; period: Period }> = {
-  CHAT_AI_BASIC: { max: 5, period: "day" },
+  CHAT_AI_BASIC: { max: 20, period: "day" },
   CHAT_AI_PRO: { max: 100, period: "day" }, // safety ceiling only; client never shows this as exhausted (chat-ai.md AC-3)
   AI_CUSTOM_PLAN: { max: 6, period: "month" },
   MEAL_PLAN: { max: 8, period: "month" },

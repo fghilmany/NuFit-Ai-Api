@@ -2,7 +2,7 @@
 // Mirrors ChatRemoteDataSource.kt's contract exactly. LOGGED_IN minimum; quota differs by tier.
 import { corsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
 import { requireUserId, UnauthorizedError } from "../_shared/auth.ts";
-import { getTier, requireTier, ForbiddenError } from "../_shared/entitlement.ts";
+import { requireAiAccess, ForbiddenError, AiAccessBlockedError } from "../_shared/entitlement.ts";
 import { assertQuotaAvailable, getQuotaStatus, recordUsage, QuotaExceededError } from "../_shared/quota.ts";
 import { generateWithTools, type ChatTurn, type FunctionDeclaration } from "../_shared/llmClient.ts";
 import { getExercise, searchExercises } from "../_shared/exerciseCatalog.ts";
@@ -69,8 +69,7 @@ Deno.serve(async (req) => {
 
   try {
     const userId = await requireUserId(req);
-    await requireTier(userId, "LOGGED_IN");
-    const tier = await getTier(userId);
+    const tier = await requireAiAccess(userId, "LOGGED_IN");
     const capability: Capability = tier === "SUBSCRIBED" ? "CHAT_AI_PRO" : "CHAT_AI_BASIC";
 
     await assertQuotaAvailable(userId, capability);
@@ -123,6 +122,9 @@ Deno.serve(async (req) => {
     }
     if (e instanceof ForbiddenError) {
       return new Response(JSON.stringify({ reason: "requires_login" }), { status: 403, headers: corsHeaders });
+    }
+    if (e instanceof AiAccessBlockedError) {
+      return new Response(JSON.stringify({ reason: "ai_access_blocked", message: e.reason }), { status: 403, headers: corsHeaders });
     }
     if (e instanceof QuotaExceededError) {
       return new Response(
