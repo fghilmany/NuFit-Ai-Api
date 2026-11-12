@@ -5,7 +5,8 @@ import { requireUserId, UnauthorizedError } from "../_shared/auth.ts";
 import { requireAiAccess, ForbiddenError, AiAccessBlockedError } from "../_shared/entitlement.ts";
 import { assertQuotaAvailable, recordUsage, QuotaExceededError } from "../_shared/quota.ts";
 import { generateStructured } from "../_shared/llmClient.ts";
-import { validateExerciseIds } from "../_shared/exerciseCatalog.ts";
+import { getExerciseCandidatesForPlan, validateExerciseIds } from "../_shared/exerciseCatalog.ts";
+import { equipmentLabel, goalLabel, muscleGroupLabel } from "../_shared/labels.ts";
 import type { AiPlanRequestDto, AiPlanResponseDto } from "../_shared/types.ts";
 
 const RESPONSE_SCHEMA = {
@@ -54,15 +55,48 @@ Deno.serve(async (req) => {
 
     const request = (await req.json()) as AiPlanRequestDto;
 
+    // Grounding (was missing entirely): the prompt used to just tell the model "use a real id,
+    // don't make one up" with nothing to pick FROM, unlike chat-send's tool-calling grounding --
+    // the model had no way to know what's actually in the catalog and reliably hallucinated ids,
+    // which validateExerciseIds below then had to drop after the fact. Handing it a real
+    // candidate list up front fixes this at the source instead of just cleaning up after.
+    const candidateExercises = await getExerciseCandidatesForPlan(
+      request.formInput.equipmentPreference,
+      request.formInput.muscleFocus,
+    );
+
     const systemInstruction =
       "Kamu adalah pelatih fitness yang membuat program latihan personal dalam Bahasa Indonesia. " +
-      "Balas HANYA dengan JSON sesuai schema yang diberikan. `exerciseId` HARUS berupa id yang nyata " +
-      "dari katalog Exercise Library NuFit AI (format numerik seperti \"0007\") -- jangan mengarang id.";
+      "Balas HANYA dengan JSON sesuai schema yang diberikan. `exerciseId` WAJIB salah satu dari `id` " +
+      "pada daftar `availableExercises` di prompt -- JANGAN membuat/mengarang id yang tidak ada di daftar itu. " +
+      "Tulis `smartGoalSummary` dalam kalimat natural Bahasa Indonesia -- JANGAN menyalin kode/istilah " +
+      "teknis mentah (co. nama field atau enum) dari data di bawah, parafrasekan dengan bahasa awam.";
 
+    // Raw enum names (FAT_LOSS, MACHINE_CABLE, CARDIO, ...) translated to plain Indonesian words
+    // before going into the prompt -- otherwise the model just echoes the literal token back into
+    // smartGoalSummary's prose ("fokus CARDIO", "peralatan MACHINE_CABLE") since that's the only
+    // wording it was ever shown. getExerciseCandidatesForPlan above already ran against the raw
+    // request.formInput (DB columns store the raw enum names, not these labels).
     const userPrompt = JSON.stringify({
-      formInput: request.formInput,
-      fullAssessment: request.fullAssessment,
+      formInput: {
+        ...request.formInput,
+        goal: goalLabel(request.formInput.goal),
+        equipmentPreference: request.formInput.equipmentPreference.map(equipmentLabel),
+        muscleFocus: request.formInput.muscleFocus.map(muscleGroupLabel),
+      },
+      fullAssessment: {
+        ...request.fullAssessment,
+        goal: goalLabel(request.fullAssessment.goal),
+        equipmentPreference: request.fullAssessment.equipmentPreference.map(equipmentLabel),
+      },
       workoutHistorySummary: request.workoutHistorySummary,
+      availableExercises: candidateExercises.map((e) => ({
+        id: e.id,
+        name: e.name,
+        equipmentCategory: e.equipment_category,
+        movementPattern: e.movement_pattern,
+        muscleGroup: e.primary_muscle_group,
+      })),
     });
 
     const result = await generateStructured<AiPlanResponseDto>({
@@ -76,8 +110,13 @@ Deno.serve(async (req) => {
     // renders this field) rather than inventing a substitute, since a safe substitute requires
     // matching movement pattern/equipment, which is a bigger follow-up than "functional first".
     // The LLM provider's `json_object` mode (unlike Gemini's strict `responseSchema`) doesn't guarantee
-    // every schema field is present -- the model may omit an empty/optional array entirely
-    // instead of returning `[]`. Default defensively rather than assuming shape.
+    // every schema field is present or correctly named -- the model may omit an empty/optional
+    // array entirely instead of returning `[]`, or rename a required field outright (observed:
+    // `smartGoal` instead of the requested `smartGoalSummary`, which crashed the client's strict
+    // @Serializable AiPlanResponseDto with MissingFieldException). Default/fallback defensively
+    // rather than assuming shape.
+    const rawResult = result.data as Record<string, unknown>;
+    const smartGoalSummary = (rawResult.smartGoalSummary as string | undefined) ?? (rawResult.smartGoal as string | undefined) ?? "";
     const days = Array.isArray(result.data.days) ? result.data.days : [];
     for (const day of days) {
       if (!Array.isArray(day.mainExercises)) day.mainExercises = [];
@@ -96,7 +135,7 @@ Deno.serve(async (req) => {
 
     await recordUsage(userId, "AI_CUSTOM_PLAN", result.model, result.tokenIn, result.tokenOut);
 
-    const responseBody: AiPlanResponseDto = { ...result.data, days, conflicts };
+    const responseBody: AiPlanResponseDto = { ...result.data, smartGoalSummary, days, conflicts };
     return new Response(JSON.stringify(responseBody), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

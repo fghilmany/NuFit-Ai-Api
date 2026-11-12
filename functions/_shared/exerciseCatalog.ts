@@ -14,6 +14,45 @@ export async function getExercise(exerciseId: string): Promise<ExerciseRow | nul
   return data as ExerciseRow | null;
 }
 
+/** Narrow fields only -- just enough for the LLM to pick a real id by name/pattern/muscle, kept
+ * out of the full `ExerciseRow` shape so this isn't mistaken for a complete row elsewhere. */
+export interface ExerciseCandidate {
+  id: string;
+  name: string;
+  equipment_category: string;
+  movement_pattern: string;
+  primary_muscle_group: string;
+}
+
+/** ai-custom-plan-generate grounding (issue: LLM was hallucinating exerciseIds -- the prompt only
+ * told it "use a real id", never actually gave it one to pick from, unlike chat-send's tool-calling
+ * grounding). Widens the filter in stages if the preferred combination comes back too thin, so the
+ * model is never handed an empty list to choose from. */
+export async function getExerciseCandidatesForPlan(
+  equipmentPreference: string[],
+  muscleFocus: string[],
+  limit = 80,
+): Promise<ExerciseCandidate[]> {
+  const select = "id, name, equipment_category, movement_pattern, primary_muscle_group";
+  const MIN_USEFUL_COUNT = 15;
+
+  const fetch = async (withEquipment: boolean, withMuscle: boolean) => {
+    let query = serviceClient().from("exercise").select(select).limit(limit);
+    if (withEquipment && equipmentPreference.length > 0) query = query.in("equipment_category", equipmentPreference);
+    if (withMuscle && muscleFocus.length > 0) query = query.in("primary_muscle_group", muscleFocus);
+    const { data } = await query;
+    return (data ?? []) as ExerciseCandidate[];
+  };
+
+  const precise = await fetch(true, true);
+  if (precise.length >= MIN_USEFUL_COUNT) return precise;
+
+  const equipmentOnly = await fetch(true, false);
+  if (equipmentOnly.length >= MIN_USEFUL_COUNT) return equipmentOnly;
+
+  return fetch(false, false);
+}
+
 export interface SearchExercisesParams {
   equipmentCategory?: string;
   movementPattern?: string;

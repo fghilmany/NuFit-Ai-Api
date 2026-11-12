@@ -105,7 +105,7 @@ export async function generateStructured<T>(params: {
   }
 
   return {
-    data: JSON.parse(stripCodeFence(content)) as T,
+    data: parseJsonContent<T>(content),
     model,
     tokenIn: usage.prompt_tokens ?? 0,
     tokenOut: usage.completion_tokens ?? 0,
@@ -117,6 +117,56 @@ function stripCodeFence(text: string): string {
   const trimmed = text.trim();
   const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
   return match ? match[1] : trimmed;
+}
+
+/** Observed failure (2026-11-12): some models emit extra non-whitespace content after a
+ * complete JSON value (e.g. a stray leading `{}` before the real object) -- strict JSON.parse
+ * throws "Unexpected non-whitespace character after JSON". Falls back to extracting just the
+ * first balanced top-level JSON value before giving up, and logs the raw content either way so
+ * a still-unparseable response is debuggable from the Edge Function logs. */
+function parseJsonContent<T>(content: string): T {
+  const stripped = stripCodeFence(content);
+  try {
+    return JSON.parse(stripped) as T;
+  } catch (firstError) {
+    const extracted = extractFirstJsonValue(stripped);
+    if (extracted) {
+      try {
+        return JSON.parse(extracted) as T;
+      } catch {
+        // fall through to the logged throw below
+      }
+    }
+    console.log(`[llmClient] JSON.parse failed, raw content: ${stripped.slice(0, 2000)}`);
+    throw firstError;
+  }
+}
+
+/** Scans for the first balanced `{...}`/`[...]` value, honoring string literals so braces inside
+ * strings don't throw off the depth count. Returns null if the text never balances. */
+function extractFirstJsonValue(text: string): string | null {
+  const start = text.search(/[{[]/);
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i++) {
+    const char = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === "{" || char === "[") depth++;
+    else if (char === "}" || char === "]") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
 }
 
 export interface FunctionDeclaration {
