@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
       },
       fullAssessment: {
         ...request.fullAssessment,
-        goal: goalLabel(request.fullAssessment.goal),
+        goal: request.fullAssessment.goals.map(goalLabel).join(", "),
         equipmentPreference: request.fullAssessment.equipmentPreference.map(equipmentLabel),
       },
       workoutHistorySummary: request.workoutHistorySummary,

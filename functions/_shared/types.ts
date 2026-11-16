@@ -27,7 +27,7 @@ export interface FullAssessmentDto {
   injuryHistoryNote: string | null;
   flagsPostural: string[];
   movementFlags: string[];
-  goal: string;
+  goals: string[];
   sessionsPerWeek: number;
   selectedWeekdays: number[];
   sessionDurationMinutes: number;
