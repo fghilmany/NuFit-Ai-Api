@@ -226,6 +226,13 @@ export async function generateWithTools(params: {
       messages,
       ...(isFinalAttempt ? {} : { tools }),
       max_tokens: 800, // pricing.md §2 chat output ceiling
+      // DeepSeek V4.1 Flash is a reasoning model -- without this it spends the completion budget
+      // on `reasoning_content` before `content`, which can leave `content` empty/truncated at
+      // this small a max_tokens (verified live, 2026-11-18: default landed content="" with the
+      // real answer stuck in reasoning_content; enable_thinking:false fixed it and cut tokens
+      // ~7x). Scoped to deepseek models only -- unverified whether other providers choke on an
+      // unrecognized field, and generateStructured (meal-plan/ai-custom-plan) isn't touched here.
+      ...(model.startsWith("deepseek") ? { enable_thinking: false } : {}),
     });
 
     tokenIn += usage.prompt_tokens ?? 0;
