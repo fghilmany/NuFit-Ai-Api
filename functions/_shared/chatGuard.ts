@@ -135,8 +135,17 @@ const OUTPUT_QUESTIONS = {
   // Split from one combined "unsafe_or_offtopic" question (2026-11-17): a borderline but benign
   // off-topic-ish reply and an actually dangerous reply were scored on the same axis, which
   // raised the false-positive rate for safe answers. Separate axes score independently.
-  unsafe_content:
-    "Apakah balasan AI berisi saran yang berbahaya atau diagnosis/resep medis yang seharusnya diarahkan ke profesional?",
+  //
+  // Split further (2026-11-18, BeginFit comparison): "unsafe_content" used to block ANY reply
+  // that merely touched medical advice -- even harmless self-care info ("kompres es", "hindari
+  // gerakan yang nyeri") got nuked to the same generic SAFE_RESPONSE as an actual diagnosis. Two
+  // axes now: actually_dangerous (real diagnosis/prescription/treat-this-condition claim -- the
+  // only one that still triggers a hard block) vs medical_advice_detected (any self-care/general
+  // info touching an injury/condition -- logged only, see guardOutput, never blocks on its own).
+  actually_dangerous:
+    "Apakah balasan AI memberikan diagnosis medis yang pasti, meresepkan obat/dosis, atau menyatakan suatu kondisi akan sembuh/aman tanpa pemeriksaan profesional?",
+  medical_advice_detected:
+    "Apakah balasan AI menyinggung cedera/nyeri/kondisi kesehatan user (meski hanya info umum/self-care seperti istirahat atau kompres es)?",
   off_topic_content:
     "Apakah balasan AI sepenuhnya di luar topik gym/latihan/nutrisi/aplikasi NuFit AI (bukan sekadar menyinggung topik lain secara wajar)?",
   leaks_system_info:
@@ -157,13 +166,17 @@ const OUTPUT_QUESTIONS = {
  * [grantedContext] is the same context block injected into the model's system prompt (Profil +
  * Plan aktif) -- lets Jev check unsupported_data_claim against what was ACTUALLY given, instead
  * of flagging every legitimate reference to real user data. */
+// medical_advice_detected is observational only -- it must never block on its own (that was the
+// exact over-blocking bug this split fixed). Every other axis still fails closed at BLOCK_AT.
+const BLOCKING_OUTPUT_AXES = ["actually_dangerous", "off_topic_content", "leaks_system_info", "complies_with_injection", "unsupported_data_claim"];
+
 export async function guardOutput(userMessage: string, aiReply: string, grantedContext: string): Promise<GuardResult> {
   const scores = await askJev({ userMessage, aiReply, grantedContext }, OUTPUT_QUESTIONS);
   console.log(`[chatGuard] output scores: ${JSON.stringify(scores)}`);
 
-  const triggered = Object.entries(scores).find(([, score]) => score >= BLOCK_AT);
+  const triggered = BLOCKING_OUTPUT_AXES.find((axis) => scores[axis] >= BLOCK_AT);
   if (triggered) {
-    return { decision: "SAFE_RESPONSE", reason: triggered[0], message: SAFE_RESPONSE_GENERIC };
+    return { decision: "SAFE_RESPONSE", reason: triggered, message: SAFE_RESPONSE_GENERIC };
   }
   return { decision: "ALLOW" };
 }

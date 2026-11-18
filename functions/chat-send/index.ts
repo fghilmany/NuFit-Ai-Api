@@ -10,9 +10,11 @@ import { getExercise, searchExercises } from "../_shared/exerciseCatalog.ts";
 import {
   getActivePlanSummary,
   getFullAssessmentSummary,
+  getLatestBodyMeasurement,
   getRecentChatHistory,
   getWorkoutHistorySummary,
 } from "../_shared/userContext.ts";
+import { calculateTdeeAndMacros, TdeeInputIncompleteError } from "../_shared/tdeeCalculator.ts";
 import type { Capability, ChatSendRequestDto, ChatSendResponseDto } from "../_shared/types.ts";
 
 // Chat-only model override (2026-11-18 live test): deepseek-v4.1-flash-1017 answered in ~2.5-5s
@@ -50,6 +52,12 @@ const TOOLS: FunctionDeclaration[] = [
     description: "Ambil ringkasan 10 sesi latihan terakhir user (status, tanggal) -- belum termasuk detail set/rep.",
     parameters: { type: "object", properties: {} },
   },
+  {
+    name: "get_tdee_macros",
+    description:
+      "Hitung kebutuhan kalori (TDEE) dan target makro (protein/karbo/lemak) harian user berdasarkan data tubuh dan aktivitas yang tersimpan. WAJIB dipanggil untuk pertanyaan kalori/makro -- jangan hitung manual.",
+    parameters: { type: "object", properties: {} },
+  },
 ];
 
 async function executeTool(userId: string, name: string, args: Record<string, unknown>): Promise<unknown> {
@@ -66,6 +74,25 @@ async function executeTool(userId: string, name: string, args: Record<string, un
       return await getActivePlanSummary(userId);
     case "get_workout_history":
       return await getWorkoutHistorySummary(userId);
+    case "get_tdee_macros": {
+      const [body, assessment] = await Promise.all([getLatestBodyMeasurement(userId), getFullAssessmentSummary(userId)]);
+      if (!body?.height_cm || !body?.weight_kg || !assessment?.age || !assessment?.gender || !assessment?.activity_level) {
+        return { error: "Data tubuh/aktivitas belum lengkap -- minta user lengkapi di Lengkapi Profil / Full Assessment." };
+      }
+      try {
+        return calculateTdeeAndMacros({
+          heightCm: body.height_cm,
+          weightKg: body.weight_kg,
+          age: assessment.age,
+          gender: assessment.gender,
+          activityLevel: assessment.activity_level,
+          goal: assessment.goal,
+        });
+      } catch (e) {
+        if (e instanceof TdeeInputIncompleteError) return { error: e.message };
+        throw e;
+      }
+    }
     default:
       return { error: `unknown tool ${name}` };
   }
@@ -117,8 +144,13 @@ Deno.serve(async (req) => {
 
     const systemInstruction =
       "Kamu adalah NuFit AI, asisten gym & nutrisi dalam Bahasa Indonesia. Jawab singkat, ramah, " +
-      "dan personal berdasarkan konteks user berikut. Untuk pertanyaan medis, arahkan ke profesional " +
-      "-- jangan mendiagnosis. Maksimal 1 pemanggilan tool per giliran.\n\n" +
+      "dan personal berdasarkan konteks user berikut. Untuk pertanyaan soal cedera/nyeri: JANGAN " +
+      "mendiagnosis kondisi spesifik atau meresepkan obat, tapi TETAP boleh beri info self-care umum " +
+      "(istirahat, kompres, modifikasi gerakan) DAN selalu sertakan kapan harus ke dokter/fisioterapis " +
+      "(red flag: bengkak berat, nyeri hebat, tidak bisa menopang berat badan, mati rasa, demam). " +
+      "Untuk pertanyaan kalori/TDEE/makro, WAJIB panggil tool get_tdee_macros -- jangan hitung manual. " +
+      "Akhiri jawaban dengan satu pertanyaan lanjutan yang relevan ke konteks user. Maksimal 1 " +
+      "pemanggilan tool per giliran.\n\n" +
       `Profil: ${JSON.stringify(assessment ?? "belum ada full assessment")}\n` +
       `Plan aktif: ${JSON.stringify(plan ?? "belum ada plan aktif")}`;
 

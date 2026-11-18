@@ -6,9 +6,22 @@ import { serviceClient } from "./supabaseClient.ts";
 export async function getFullAssessmentSummary(userId: string) {
   const { data } = await serviceClient()
     .from("full_assessment_result")
-    .select("age, gender, goal, sessions_per_week, injury_history, equipment_preference")
+    .select("age, gender, goal, sessions_per_week, injury_history, equipment_preference, activity_level")
     .eq("user_id", userId)
     .order("completed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+/** [get_tdee_macros] tool's other input half -- height/weight lives in its own synced table
+ * (body_measurement), not full_assessment_result (see 20261116000001_onboarding_sync_tables.sql). */
+export async function getLatestBodyMeasurement(userId: string) {
+  const { data } = await serviceClient()
+    .from("body_measurement")
+    .select("height_cm, weight_kg")
+    .eq("user_id", userId)
+    .order("recorded_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   return data;
