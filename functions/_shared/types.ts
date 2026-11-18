@@ -89,6 +89,10 @@ export interface ChatReplyDto {
   text: string;
   exerciseSuggestion: ExerciseSuggestionDto | null;
   suggestedReplies: string[];
+  /** true when `text` is a fixed guard decision (REDIRECT/CLARIFY/SAFE_RESPONSE), not a model
+   * answer -- lets the client style/label it differently from a real AI reply. Additive field;
+   * safe for older clients (Json { ignoreUnknownKeys = true }). */
+  isPolicyResponse: boolean;
 }
 
 export interface ChatQuotaDto {
