@@ -78,6 +78,9 @@ export interface AiPlanResponseDto {
 export interface ChatSendRequestDto {
   message: string;
   conversationHistoryLimit: number;
+  /** "New Chat" cutoff (ISO instant) -- history from before this point is excluded from the
+   * model's context. Null/absent = no cutoff. */
+  conversationStartedAfter?: string | null;
 }
 
 export interface ExerciseSuggestionDto {

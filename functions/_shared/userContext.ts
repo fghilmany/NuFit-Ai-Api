@@ -44,13 +44,17 @@ export interface ChatHistoryRow {
   created_at: string;
 }
 
-export async function getRecentChatHistory(userId: string, limit: number): Promise<ChatHistoryRow[]> {
-  const { data } = await serviceClient()
+/** [since] is the client's "New Chat" cutoff (ISO instant) -- messages from before a reset are
+ * excluded from context so the model doesn't keep "remembering" a conversation the user already
+ * started fresh from, even though the rows themselves are never deleted (dev-requested design,
+ * 2026-11-18). Undefined/null means no cutoff -- normal full-history behavior. */
+export async function getRecentChatHistory(userId: string, limit: number, since?: string | null): Promise<ChatHistoryRow[]> {
+  let query = serviceClient()
     .from("chat_message")
     .select("role, text, status, created_at")
     .eq("user_id", userId)
-    .eq("status", "SENT")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .eq("status", "SENT");
+  if (since) query = query.gte("created_at", since);
+  const { data } = await query.order("created_at", { ascending: false }).limit(limit);
   return (data ?? []).reverse();
 }

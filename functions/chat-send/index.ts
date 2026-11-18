@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     // continuation instead of a cold, ambiguous message (live false positive, 2026-11-18) --
     // so history must resolve before guardInput runs. assessment/plan don't feed the guard, so
     // they still run concurrently with it.
-    const historyPromise = getRecentChatHistory(userId, request.conversationHistoryLimit || 20);
+    const historyPromise = getRecentChatHistory(userId, request.conversationHistoryLimit || 20, request.conversationStartedAfter);
     const contextPromise = Promise.all([getFullAssessmentSummary(userId), getActivePlanSummary(userId)]);
 
     const history = await historyPromise;
