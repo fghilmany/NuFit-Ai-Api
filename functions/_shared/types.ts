@@ -122,6 +122,7 @@ export interface MealPreferenceDto {
   cuisineThemes: string[];
   mood: string | null;
   allergies: string[];
+  notes: string | null;
   scheduleMode: string;
 }
 
