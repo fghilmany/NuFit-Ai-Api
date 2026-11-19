@@ -16,6 +16,7 @@ export interface AiPlanFormInputDto {
   equipmentPreference: string[];
   muscleFocus: string[];
   planDurationWeeks: number;
+  notes: string | null;
 }
 
 export interface FullAssessmentDto {
