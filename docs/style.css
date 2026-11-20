@@ -1,63 +1,164 @@
+/* NuFit AI brand tokens -- mirrors shared/src/commonMain/.../designsystem/theme/Color.kt
+   (Primary #012D1D, TertiaryFixed mint #A0F4C8, Background #F8F9FA). Light theme only --
+   the app itself has no dark variant yet either. */
+:root {
+    --primary: #012D1D;
+    --primary-container: #1B4332;
+    --on-primary-container: #86AF99;
+    --secondary-container: #CCE6D0;
+    --on-secondary-container: #506856;
+    --mint: #A0F4C8;
+    --mint-dim: #85D7AD;
+    --on-mint: #002113;
+    --background: #F8F9FA;
+    --surface: #FFFFFF;
+    --surface-container: #EDEEEF;
+    --on-surface: #191C1D;
+    --on-surface-variant: #414844;
+    --outline: #C1C8C2;
+    --warning-bg: #FFF4E5;
+    --warning-fg: #945700;
+}
+
+* { box-sizing: border-box; }
+
 body {
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.6;
-    color: #1a1a1a;
-    background: #fafafa;
+    font-family: "Plus Jakarta Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65;
+    color: var(--on-surface);
+    background: var(--background);
+    margin: 0;
+}
+
+.page {
     max-width: 760px;
     margin: 0 auto;
-    padding: 32px 20px 80px;
+    padding: 0 20px 80px;
 }
+
+header.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px;
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--primary);
+}
+.brand img { width: 32px; height: 32px; border-radius: 9px; }
+.brand span { font-weight: 800; font-size: 18px; letter-spacing: -0.2px; }
+
+.lang-switch {
+    display: flex;
+    background: var(--surface-container);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+}
+.lang-switch button {
+    border: none;
+    background: transparent;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+}
+html[data-lang="id"] .lang-switch button[data-lang-set="id"],
+html[data-lang="en"] .lang-switch button[data-lang-set="en"] {
+    background: var(--primary);
+    color: #fff;
+}
+
 h1 {
-    font-size: 28px;
-    margin-bottom: 4px;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    margin: 12px 0 2px;
 }
 h2 {
-    font-size: 20px;
-    margin-top: 36px;
+    font-size: 19px;
+    font-weight: 700;
+    margin-top: 34px;
+    color: var(--primary);
 }
+p { color: var(--on-surface-variant); }
+strong { color: var(--on-surface); }
+
 .updated {
-    color: #666;
+    color: var(--on-surface-variant);
     font-size: 14px;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
 }
-a {
-    color: #2563eb;
-}
-nav {
-    margin-bottom: 32px;
+
+a { color: var(--primary-container); font-weight: 600; }
+
+nav.crumbs {
+    margin-bottom: 28px;
     font-size: 14px;
+    display: flex;
+    gap: 16px;
 }
-nav a {
-    margin-right: 16px;
-}
-ul {
-    padding-left: 22px;
-}
+
+ul { padding-left: 22px; color: var(--on-surface-variant); }
+ul li { margin-bottom: 6px; }
+ol { padding-left: 22px; color: var(--on-surface-variant); }
+
 .box {
-    background: #fff;
-    border: 1px solid #e5e5e5;
-    border-radius: 10px;
-    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: 24px;
+    padding: 22px 26px;
     margin: 20px 0;
 }
+.box h2 { margin-top: 0; }
+
+.note {
+    background: var(--warning-bg);
+    color: var(--warning-fg);
+    border-radius: 16px;
+    padding: 14px 18px;
+    font-size: 14px;
+    margin-top: 14px;
+}
+.note strong { color: var(--warning-fg); }
+
 .button {
     display: inline-block;
-    background: #2563eb;
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 8px;
+    background: var(--primary);
+    color: #fff !important;
+    padding: 12px 24px;
+    border-radius: 999px;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
     margin-top: 8px;
 }
-code {
-    background: #f1f1f1;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 14px;
+.button:hover { background: var(--primary-container); }
+
+.button.ghost {
+    background: var(--mint);
+    color: var(--on-mint) !important;
 }
+
 footer {
     margin-top: 48px;
-    color: #888;
+    color: var(--on-surface-variant);
     font-size: 13px;
 }
+
+[data-lang] { display: none; }
+html[data-lang="id"] [data-lang="id"] { display: revert; }
+html[data-lang="en"] [data-lang="en"] { display: revert; }
+span[data-lang] { display: none; }
+html[data-lang="id"] span[data-lang="id"] { display: inline; }
+html[data-lang="en"] span[data-lang="en"] { display: inline; }

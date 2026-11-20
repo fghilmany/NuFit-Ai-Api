@@ -4,14 +4,32 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy Policy - NuFit AI</title>
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script src="lang.js"></script>
 </head>
 <body>
-<nav><a href="index.html">&larr; Kembali</a> <a href="delete-account.html">Hapus Akun & Data</a></nav>
+<header class="topbar">
+    <a class="brand" href="index.html"><img src="logo.png" alt="NuFit AI"><span>NuFit AI</span></a>
+    <div class="lang-switch">
+        <button data-lang-set="id">ID</button>
+        <button data-lang-set="en">EN</button>
+    </div>
+</header>
+
+<div class="page">
+<nav class="crumbs">
+    <a href="index.html"><span data-lang="id">&larr; Kembali</span><span data-lang="en">&larr; Back</span></a>
+    <a href="delete-account.html"><span data-lang="id">Hapus Akun &amp; Data</span><span data-lang="en">Delete Account &amp; Data</span></a>
+</nav>
 
 <h1>Privacy Policy</h1>
-<p class="updated">Berlaku mulai: 20 November 2026</p>
+<p class="updated"><span data-lang="id">Berlaku mulai:</span><span data-lang="en">Effective:</span> 20 November 2026</p>
 
+<div data-lang="id">
 <p>NuFit AI ("kami") adalah aplikasi pendamping latihan gym. Kebijakan ini menjelaskan data apa yang
 kami kumpulkan, bagaimana digunakan, dan hak kamu atas data tersebut.</p>
 
@@ -20,7 +38,7 @@ kami kumpulkan, bagaimana digunakan, dan hak kamu atas data tersebut.</p>
 di bawah ini juga disimpan di server kami agar bisa dipulihkan di perangkat lain:</p>
 <ul>
     <li><strong>Data akun:</strong> email, nama, dan foto profil dari akun Google kamu (via Google Sign-In).</li>
-    <li><strong>Data profil & tubuh:</strong> usia, gender, tinggi, berat badan, lokasi latihan, alat yang tersedia.</li>
+    <li><strong>Data profil &amp; tubuh:</strong> usia, gender, tinggi, berat badan, lokasi latihan, alat yang tersedia.</li>
     <li><strong>Data kesehatan yang kamu isi sendiri:</strong> jawaban PAR-Q (skrining keselamatan sebelum
     olahraga), riwayat cedera, level aktivitas, hasil tes kapasitas fisik (push-up, plank, sit-to-stand).</li>
     <li><strong>Data latihan:</strong> plan latihan, riwayat sesi, set/rep/beban yang kamu catat, RPE.</li>
@@ -45,7 +63,7 @@ di bawah ini juga disimpan di server kami agar bisa dipulihkan di perangkat lain
 
 <h2>Dengan siapa data dibagikan</h2>
 <ul>
-    <li><strong>Supabase</strong> — penyedia database & autentikasi tempat data cloud kami disimpan.</li>
+    <li><strong>Supabase</strong> — penyedia database &amp; autentikasi tempat data cloud kami disimpan.</li>
     <li><strong>Google</strong> — untuk proses Sign-In.</li>
     <li><strong>Penyedia model AI</strong> — memproses pesan chat dan permintaan generate plan/meal plan.</li>
     <li><strong>Sentry</strong> — menerima log crash/error teknis.</li>
@@ -58,7 +76,7 @@ di aplikasi.</p>
 perangkatmu — tidak ada data yang dikirim ke server kami selain untuk fitur yang memang butuh internet
 (Chat AI, AI Custom Plan, Meal Plan). Login bersifat opsional.</p>
 
-<h2>Penyimpanan & keamanan</h2>
+<h2>Penyimpanan &amp; keamanan</h2>
 <p>Data cloud disimpan terenkripsi saat transit (HTTPS) dan di database kami. Akses ke data kamu
 dibatasi hanya untuk akun kamu sendiri (row-level security).</p>
 
@@ -79,7 +97,77 @@ akun beserta data cloud lewat aplikasi atau <a href="delete-account.html">halama
 
 <h2>Kontak</h2>
 <p>Pertanyaan soal privasi? Hubungi <a href="mailto:fghilmany62@gmail.com">fghilmany62@gmail.com</a>.</p>
+</div>
+
+<div data-lang="en">
+<p>NuFit AI ("we") is a gym training companion app. This policy explains what data we collect,
+how it's used, and your rights over it.</p>
+
+<h2>Data we collect</h2>
+<p>Most data stays local on your device. If you sign in (Google Sign-In), some of the data below is
+also stored on our servers so it can be restored on another device:</p>
+<ul>
+    <li><strong>Account data:</strong> email, name, and profile photo from your Google account (via Google Sign-In).</li>
+    <li><strong>Profile &amp; body data:</strong> age, gender, height, weight, training location, available equipment.</li>
+    <li><strong>Self-reported health data:</strong> PAR-Q answers (pre-exercise safety screening), injury
+    history, activity level, physical capacity test results (push-up, plank, sit-to-stand).</li>
+    <li><strong>Training data:</strong> workout plans, session history, the sets/reps/weight you log, RPE.</li>
+    <li><strong>Meal data (if you use Meal Plan):</strong> meal preferences, calorie/macro targets, planned
+    meals, meal logs.</li>
+    <li><strong>Chat history with AI:</strong> messages you send to the Chat AI feature, kept so the
+    conversation has context and history.</li>
+    <li><strong>Technical data:</strong> error/crash logs (via Sentry) to help us fix bugs. These logs do
+    not intentionally include passwords or access tokens.</li>
+</ul>
+
+<h2>How data is used</h2>
+<ul>
+    <li>Running core features: workout plans, PT Mode, history, Assessment, Meal Plan.</li>
+    <li>Chat AI, AI Custom Plan, and Meal Plan send a limited slice of your profile/history (not your
+    entire history) to a third-party AI model provider to generate personalized answers/plans. Chat
+    messages and plan-generation requests are processed by that provider only to answer your request.</li>
+    <li>Syncing across devices when you're signed in.</li>
+    <li>Fixing bugs through crash reports.</li>
+</ul>
+
+<h2>Who we share data with</h2>
+<ul>
+    <li><strong>Supabase</strong> — the database &amp; authentication provider where our cloud data is stored.</li>
+    <li><strong>Google</strong> — for the Sign-In process.</li>
+    <li><strong>AI model provider</strong> — processes chat messages and plan/meal-plan generation requests.</li>
+    <li><strong>Sentry</strong> — receives technical crash/error logs.</li>
+</ul>
+<p>We <strong>never sell</strong> your data to third parties, and the app shows no third-party ads.</p>
+
+<h2>Local vs. Cloud</h2>
+<p>Without signing in, every core feature (assessment, plan, PT Mode, library) runs 100% locally on
+your device — nothing is sent to our servers except for features that genuinely need the internet
+(Chat AI, AI Custom Plan, Meal Plan). Signing in is optional.</p>
+
+<h2>Storage &amp; security</h2>
+<p>Cloud data is encrypted in transit (HTTPS) and at rest in our database. Access to your data is
+restricted to your own account (row-level security).</p>
+
+<h2>How long we keep data</h2>
+<p>Data is kept while your account is active. If you delete your account, related cloud data is
+deleted within 30 days — see the <a href="delete-account.html">delete account page</a>.</p>
+
+<h2>Children</h2>
+<p>NuFit AI is not directed at children under 13, and we do not knowingly collect data from anyone
+under that age.</p>
+
+<h2>Your rights</h2>
+<p>You can view, change, or delete your profile data at any time in the app, and delete your account
+and cloud data via the app or <a href="delete-account.html">this page</a>.</p>
+
+<h2>Changes to this policy</h2>
+<p>If this policy changes significantly, we'll update the "Effective" date above.</p>
+
+<h2>Contact</h2>
+<p>Questions about privacy? Reach us at <a href="mailto:fghilmany62@gmail.com">fghilmany62@gmail.com</a>.</p>
+</div>
 
 <footer>NuFit AI</footer>
+</div>
 </body>
 </html>

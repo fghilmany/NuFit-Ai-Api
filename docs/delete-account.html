@@ -4,14 +4,32 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hapus Akun & Data - NuFit AI</title>
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script src="lang.js"></script>
 </head>
 <body>
-<nav><a href="index.html">&larr; Kembali</a> <a href="privacy-policy.html">Privacy Policy</a></nav>
+<header class="topbar">
+    <a class="brand" href="index.html"><img src="logo.png" alt="NuFit AI"><span>NuFit AI</span></a>
+    <div class="lang-switch">
+        <button data-lang-set="id">ID</button>
+        <button data-lang-set="en">EN</button>
+    </div>
+</header>
 
-<h1>Hapus Akun & Data</h1>
-<p class="updated">Berlaku mulai: 20 November 2026</p>
+<div class="page">
+<nav class="crumbs">
+    <a href="index.html"><span data-lang="id">&larr; Kembali</span><span data-lang="en">&larr; Back</span></a>
+    <a href="privacy-policy.html">Privacy Policy</a>
+</nav>
 
+<h1><span data-lang="id">Hapus Akun &amp; Data</span><span data-lang="en">Delete Account &amp; Data</span></h1>
+<p class="updated"><span data-lang="id">Berlaku mulai:</span><span data-lang="en">Effective:</span> 20 November 2026</p>
+
+<div data-lang="id">
 <p>Kamu bisa menghapus akun NuFit AI dan data cloud yang terkait dengan dua cara: lewat aplikasi, atau
 lewat halaman ini kalau kamu sudah tidak punya akses ke aplikasi.</p>
 
@@ -26,10 +44,10 @@ lewat halaman ini kalau kamu sudah tidak punya akses ke aplikasi.</p>
 <h2>Cara 2 — Tanpa aplikasi (lewat email)</h2>
 <p>Kalau kamu sudah uninstall app atau tidak bisa login, kirim email permintaan hapus akun ke:</p>
 <div class="box">
-    <p style="margin:0"><a class="button" href="mailto:fghilmany62@gmail.com?subject=Permintaan%20Hapus%20Akun%20NuFit%20AI&body=Email%20akun%20Google%20yang%20didaftarkan%3A%20">
+    <a class="button" href="mailto:fghilmany62@gmail.com?subject=Permintaan%20Hapus%20Akun%20NuFit%20AI&body=Email%20akun%20Google%20yang%20didaftarkan%3A%20">
         Kirim permintaan hapus akun
-    </a></p>
-    <p style="margin-top:12px; font-size:14px; color:#555">
+    </a>
+    <p style="margin-top:14px; font-size:14px">
         Sertakan email akun Google yang kamu pakai login di NuFit AI, supaya kami bisa memverifikasi
         dan menemukan akunnya.
     </p>
@@ -40,22 +58,69 @@ waktu maksimal <strong>30 hari</strong> sejak permintaan diterima.</p>
 <h2>Data apa yang dihapus</h2>
 <ul>
     <li>Data akun (email, nama, foto profil yang tersimpan dari Google Sign-In).</li>
-    <li>Data profil & tubuh, riwayat PAR-Q/assessment, riwayat cedera.</li>
+    <li>Data profil &amp; tubuh, riwayat PAR-Q/assessment, riwayat cedera.</li>
     <li>Plan latihan, riwayat sesi, log set/rep/beban, RPE.</li>
-    <li>Data meal plan & riwayat makan.</li>
+    <li>Data meal plan &amp; riwayat makan.</li>
     <li>Riwayat chat dengan AI.</li>
 </ul>
 
 <h2>Data apa yang mungkin tetap disimpan</h2>
-<ul>
-    <li>Log teknis/crash yang sudah dikirim ke penyedia monitoring error (Sentry) sebelum penghapusan —
-    log ini tidak berisi data pribadi yang bisa mengidentifikasi kamu secara langsung.</li>
-    <li>Catatan transaksi/akuntansi yang wajib disimpan sesuai hukum yang berlaku, bila ada.</li>
-</ul>
+<div class="note">
+    <p style="margin:0">Log teknis/crash yang sudah dikirim ke penyedia monitoring error (Sentry) sebelum
+    penghapusan tidak berisi data pribadi yang bisa langsung mengidentifikasi kamu. Catatan yang wajib
+    disimpan sesuai hukum yang berlaku (bila ada) juga tetap disimpan sesuai masa retensinya.</p>
+</div>
 <p>Data lokal di perangkatmu (kalau kamu tidak pernah login, atau memilih tetap menyimpan lokal) tidak
 pernah terkirim ke server kami, jadi hanya terhapus kalau kamu uninstall aplikasi atau hapus data app
 dari pengaturan perangkat.</p>
+</div>
+
+<div data-lang="en">
+<p>You can delete your NuFit AI account and related cloud data in two ways: from inside the app, or
+from this page if you no longer have access to the app.</p>
+
+<h2>Option 1 — From the app (recommended)</h2>
+<ol>
+    <li>Open NuFit AI &rarr; the <strong>Account</strong> tab.</li>
+    <li>Scroll to the bottom &rarr; tap <strong>Delete Account</strong>.</li>
+    <li>Confirm the deletion.</li>
+</ol>
+<p>Your account and cloud data are deleted immediately.</p>
+
+<h2>Option 2 — Without the app (by email)</h2>
+<p>If you've already uninstalled the app or can't log in, send a deletion request to:</p>
+<div class="box">
+    <a class="button" href="mailto:fghilmany62@gmail.com?subject=NuFit%20AI%20Account%20Deletion%20Request&body=Google%20account%20email%20used%20to%20log%20in%3A%20">
+        Send a deletion request
+    </a>
+    <p style="margin-top:14px; font-size:14px">
+        Include the Google account email you used to sign in to NuFit AI, so we can verify and locate
+        the account.
+    </p>
+</div>
+<p>We'll verify your identity via the registered Google account email, then delete the account within
+a maximum of <strong>30 days</strong> of receiving the request.</p>
+
+<h2>What gets deleted</h2>
+<ul>
+    <li>Account data (email, name, profile photo stored from Google Sign-In).</li>
+    <li>Profile &amp; body data, PAR-Q/assessment history, injury history.</li>
+    <li>Workout plans, session history, set/rep/weight logs, RPE.</li>
+    <li>Meal plan data &amp; meal logs.</li>
+    <li>Chat history with the AI.</li>
+</ul>
+
+<h2>What may still be retained</h2>
+<div class="note">
+    <p style="margin:0">Technical/crash logs already sent to our error-monitoring provider (Sentry)
+    before deletion do not contain data that directly identifies you. Records we're legally required
+    to keep (if any) are retained for their required retention period.</p>
+</div>
+<p>Local data on your device (if you never signed in, or chose to keep it local-only) is never sent to
+our servers, so it's only removed when you uninstall the app or clear its data from your device settings.</p>
+</div>
 
 <footer>NuFit AI &middot; <a href="mailto:fghilmany62@gmail.com">fghilmany62@gmail.com</a></footer>
+</div>
 </body>
 </html>

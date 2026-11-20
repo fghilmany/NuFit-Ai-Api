@@ -4,24 +4,47 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NuFit AI</title>
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script src="lang.js"></script>
 </head>
 <body>
-<h1>NuFit AI</h1>
-<p class="updated">Halaman dukungan & legal untuk aplikasi NuFit AI.</p>
+<header class="topbar">
+    <a class="brand" href="index.html"><img src="logo.png" alt="NuFit AI"><span>NuFit AI</span></a>
+    <div class="lang-switch">
+        <button data-lang-set="id">ID</button>
+        <button data-lang-set="en">EN</button>
+    </div>
+</header>
 
-<div class="box">
-    <h2 style="margin-top:0">Privacy Policy</h2>
-    <p>Kebijakan privasi — data apa yang kami kumpulkan dan bagaimana digunakan.</p>
-    <a class="button" href="privacy-policy.html">Baca Privacy Policy</a>
+<div class="page">
+    <p data-lang="id" class="updated">Halaman dukungan &amp; legal untuk aplikasi NuFit AI.</p>
+    <p data-lang="en" class="updated">Support &amp; legal pages for the NuFit AI app.</p>
+
+    <div class="box">
+        <h2>Privacy Policy</h2>
+        <p data-lang="id">Kebijakan privasi — data apa yang kami kumpulkan dan bagaimana digunakan.</p>
+        <p data-lang="en">Our privacy policy — what data we collect and how it's used.</p>
+        <a class="button" href="privacy-policy.html">
+            <span data-lang="id">Baca Privacy Policy</span>
+            <span data-lang="en">Read Privacy Policy</span>
+        </a>
+    </div>
+
+    <div class="box">
+        <h2><span data-lang="id">Hapus Akun &amp; Data</span><span data-lang="en">Delete Account &amp; Data</span></h2>
+        <p data-lang="id">Cara menghapus akun dan data kamu, baik dari dalam app maupun tanpa app.</p>
+        <p data-lang="en">How to delete your account and data, from inside the app or without it.</p>
+        <a class="button ghost" href="delete-account.html">
+            <span data-lang="id">Lihat caranya</span>
+            <span data-lang="en">See how</span>
+        </a>
+    </div>
+
+    <footer>NuFit AI &middot; <span data-lang="id">kontak:</span><span data-lang="en">contact:</span> fghilmany62@gmail.com</footer>
 </div>
-
-<div class="box">
-    <h2 style="margin-top:0">Hapus Akun & Data</h2>
-    <p>Cara menghapus akun dan data kamu, baik dari dalam app maupun tanpa app.</p>
-    <a class="button" href="delete-account.html">Lihat caranya</a>
-</div>
-
-<footer>NuFit AI &middot; kontak: fghilmany62@gmail.com</footer>
 </body>
 </html>
