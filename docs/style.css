@@ -156,9 +156,9 @@ footer {
     font-size: 13px;
 }
 
-[data-lang] { display: none; }
-html[data-lang="id"] [data-lang="id"] { display: revert; }
-html[data-lang="en"] [data-lang="en"] { display: revert; }
-span[data-lang] { display: none; }
-html[data-lang="id"] span[data-lang="id"] { display: inline; }
-html[data-lang="en"] span[data-lang="en"] { display: inline; }
+[data-i18n] { display: none; }
+html[data-lang="id"] [data-i18n="id"] { display: revert; }
+html[data-lang="en"] [data-i18n="en"] { display: revert; }
+span[data-i18n] { display: none; }
+html[data-lang="id"] span[data-i18n="id"] { display: inline; }
+html[data-lang="en"] span[data-i18n="en"] { display: inline; }
